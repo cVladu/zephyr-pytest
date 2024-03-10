@@ -1,0 +1,10 @@
+site_name: pytest-zephyr-pytest
+site_description: A plugin to automate Zephyr integration with pytest
+site_author: Vladu Catalin-Alexandru
+
+theme: readthedocs
+
+repo_url: https://github.com/cVladu/pytest-zephyr-pytest
+
+pages:
+- Home: index.md
