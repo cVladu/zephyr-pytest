@@ -409,3 +409,38 @@ def test_sth():
     )
     result = pytester.runpytest("--zephyr")
     assert result.ret == 0
+
+
+def test_zephyr_creating_with_teststeps_list(
+    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
+):
+    """
+    Check that the plugin correctly creates the test case in zephyr given the marker
+    """
+    pytester.makeini(
+        f"""
+[pytest]
+zephyr_project_key = {project_key}
+zephyr_auth_token = {auth_token}
+zephyr_jira_base_url = {jira_base_url}
+zephyr_jira_email = {jira_email}
+zephyr_jira_token = {jira_token}
+zephyr_strict = True
+                         """
+    )
+    pytester.makepyfile(
+        """ # noqa: E501
+import pytest
+@pytest.mark.zephyr_testcase(test_steps=[{"step": "Do something", "expected": "Something happened"}, {"step": "Do something without expectation"}, {"step": "Do final thing", "expected": "Final thing happened"}])
+def test_sth():
+    \"\"\"This is a test case
+    Test steps:
+        1. Do something
+        2. Do something else
+        3. Do something else again
+    \"\"\"
+    assert True
+"""
+    )
+    result = pytester.runpytest("--zephyr")
+    assert result.ret == 0

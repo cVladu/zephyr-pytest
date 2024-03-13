@@ -2,6 +2,9 @@
 from typing import Optional
 from dataclasses import dataclass
 
+TEST_STEPS_OVERWRITE = "OVERWRITE"
+TEST_STEPS_APPEND = "APPEND"
+
 
 @dataclass
 class ZephyrTestCase:
