@@ -5,7 +5,7 @@ requires = [
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "zephyr-pytest"
+name = "pytest-zephyr"
 description = "A plugin to automate Zephyr integration with pytest"
 version = "0.1.0"
 readme = "README.rst"
@@ -37,8 +37,9 @@ classifiers = [
 dependencies = [
     "zephyr-python-api>=0.0.4",
     "pytest>=6.2.0",
+    "types-requests",
 ]
 [project.urls]
-Repository = "https://github.com/cVladu/zephyr-pytest"
+Repository = "https://github.com/cVladu/pytest-zephyr"
 [project.entry-points.pytest11]
-zephyr_pytest = "zephyr_pytest.plugin"
+pytest_zephyr = "pytest_zephyr.plugin"
