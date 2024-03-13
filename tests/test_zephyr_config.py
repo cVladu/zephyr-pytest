@@ -1,115 +1,138 @@
+# -*- coding: utf-8 -*-
 def test_zephyr_without_project_key(pytester):
     """Test that the plugin raises an error when no project key is provided"""
 
-    pytester.makepyfile("""
+    pytester.makepyfile(
+        """
         def test_sth():
             assert True
-    """)
-
-    result = pytester.runpytest(
-        '--zephyr'
+    """
     )
 
-    result.stderr.fnmatch_lines([
-        '*ValueError: zephyr: zephyr_project_key is required'
-    ])
+    result = pytester.runpytest("--zephyr")
+
+    result.stderr.fnmatch_lines("*ValueError: zephyr: The following mandatory params not found in pytest ini file or sys env vars:")
+    result.stderr.fnmatch_lines("*zephyr_project_key*")
+    result.stderr.fnmatch_lines("*zephyr_auth_token*")
+    result.stderr.fnmatch_lines("*zephyr_jira_base_url*")
+    result.stderr.fnmatch_lines("*zephyr_jira_email*")
+    result.stderr.fnmatch_lines("*zephyr_jira_token*")
     assert result.ret != 1
 
 
-def test_zephyr_without_auth_token_implicit_cloud(pytester):
+def test_zephyr_without_auth_token(pytester, project_key):
     """Test that the plugin raises an error when no auth token is provided"""
-    pytester.makeini("""
+    pytester.makeini(
+        f"""
                          [pytest]
-                         zephyr_project_key = ABC
-                         """)
-    pytester.makepyfile("""
+                         zephyr_project_key = {project_key}
+                         """
+    )
+    pytester.makepyfile(
+        """
                         def test_sth():
                             assert True
-                        """)
-    result = pytester.runpytest(
-            "--zephyr"
-            )
-    result.stderr.fnmatch_lines([
-        '*ValueError: zephyr: zephyr_auth_token is required for cloud instance'
-    ])
-    assert result.ret != 1
+                        """
+    )
+    result = pytester.runpytest("--zephyr")
+    result.stderr.fnmatch_lines("*ValueError: zephyr: The following mandatory params not found in pytest ini file or sys env vars:")
+    result.stderr.fnmatch_lines("*zephyr_auth_token*")
+    result.stderr.fnmatch_lines("*zephyr_jira_base_url*")
+    result.stderr.fnmatch_lines("*zephyr_jira_email*")
+    result.stderr.fnmatch_lines("*zephyr_jira_token*")
+    assert result.ret != 0
 
 
-def test_zephyr_without_auth_token_explicit_cloud(pytester):
-    """Test that the plugin raises an error when no auth token is provided"""
-    pytester.makeini("""
+def test_zephyr_without_jira_base_url(pytester, auth_token, project_key):
+    """Test that the plugin does not raise an error when all required fields are provided"""
+    pytester.makeini(
+        f"""
                          [pytest]
-                         zephyr_project_key = ABC
-                         zephyr_host = cloud
-                         """)
-    pytester.makepyfile("""
+                         zephyr_project_key = {project_key}
+                         zephyr_auth_token = {auth_token}
+                         """
+    )
+    pytester.makepyfile(
+        """
                         def test_sth():
                             assert True
-                        """)
-    result = pytester.runpytest(
-            "--zephyr"
-            )
-    result.stderr.fnmatch_lines([
-        '*ValueError: zephyr: zephyr_auth_token is required for cloud instance'
-    ])
-    assert result.ret != 1
+                        """
+    )
+    result = pytester.runpytest("--zephyr")
+    result.stderr.fnmatch_lines("*ValueError: zephyr: The following mandatory params not found in pytest ini file or sys env vars:")
+    result.stderr.fnmatch_lines("*zephyr_jira_base_url*")
+    result.stderr.fnmatch_lines("*zephyr_jira_email*")
+    result.stderr.fnmatch_lines("*zephyr_jira_token*")
+    assert result.ret != 0
 
 
-def test_zephyr_without_username_explicit_server(pytester):
-    """Test that the plugin raises an error when no username is provided"""
-    pytester.makeini("""
+def test_zephyr_without_jira_username(pytester, auth_token, project_key, jira_base_url):
+    """Test that the plugin does not raise an error when all required fields are provided"""
+    pytester.makeini(
+        f"""
                          [pytest]
-                         zephyr_project_key = ABC
-                         zephyr_host = server
-                         """)
-    pytester.makepyfile("""
+                         zephyr_project_key = {project_key}
+                         zephyr_auth_token = {auth_token}
+                         zephyr_jira_base_url = {jira_base_url}
+                         """
+    )
+    pytester.makepyfile(
+        """
                         def test_sth():
                             assert True
-                        """)
-    result = pytester.runpytest(
-            "--zephyr"
-            )
-    result.stderr.fnmatch_lines([
-        '*ValueError: zephyr: zephyr_username is required for server instance'
-    ])
-    assert result.ret != 1
+                        """
+    )
+    result = pytester.runpytest("--zephyr")
+    result.stderr.fnmatch_lines("*ValueError: zephyr: The following mandatory params not found in pytest ini file or sys env vars:")
+    result.stderr.fnmatch_lines("*zephyr_jira_email*")
+    result.stderr.fnmatch_lines("*zephyr_jira_token*")
+    assert result.ret != 0
 
 
-def test_zephyr_without_password_explicit_server(pytester):
-    """Test that the plugin raises an error when no password is provided"""
-    pytester.makeini("""
+def test_zephyr_without_jira_token(
+    pytester, auth_token, project_key, jira_base_url, jira_email
+):
+    """Test that the plugin does not raise an error when all required fields are provided"""
+    pytester.makeini(
+        f"""
                          [pytest]
-                         zephyr_project_key = ABC
-                         zephyr_host = server
-                         zephyr_username = user
-                         """)
-    pytester.makepyfile("""
+                         zephyr_project_key = {project_key}
+                         zephyr_auth_token = {auth_token}
+                         zephyr_jira_base_url = {jira_base_url}
+                         zephyr_jira_email = {jira_email}
+                         """
+    )
+    pytester.makepyfile(
+        """
                         def test_sth():
                             assert True
-                        """)
-    result = pytester.runpytest(
-            "--zephyr"
-            )
-    result.stderr.fnmatch_lines([
-        '*ValueError: zephyr: zephyr_password is required for server instance'
-    ])
-    assert result.ret != 1
+                        """
+    )
+    result = pytester.runpytest("--zephyr")
+    result.stderr.fnmatch_lines("*ValueError: zephyr: The following mandatory params not found in pytest ini file or sys env vars:")
+    result.stderr.fnmatch_lines("*zephyr_jira_token*")
+    assert result.ret != 0
 
-def test_zephyr_invalid_host(pytester):
-    """Test that the plugin raises an error when an invalid host is provided"""
-    pytester.makeini("""
+
+def test_zephyr_all_required_fields(
+    pytester, auth_token, project_key, jira_base_url, jira_email, jira_token
+):
+    """Test that the plugin does not raise an error when all required fields are provided"""
+    pytester.makeini(
+        f"""
                          [pytest]
-                         zephyr_project_key = ABC
-                         zephyr_host = invalid
-                         """)
-    pytester.makepyfile("""
+                         zephyr_project_key = {project_key}
+                         zephyr_auth_token = {auth_token}
+                         zephyr_jira_base_url = {jira_base_url}
+                         zephyr_jira_email = {jira_email}
+                         zephyr_jira_token = {jira_token}
+                         """
+    )
+    pytester.makepyfile(
+        """
                         def test_sth():
                             assert True
-                        """)
-    result = pytester.runpytest(
-            "--zephyr"
-            )
-    result.stderr.fnmatch_lines([
-        '*ValueError: zephyr: Invalid zephyr_host value'
-    ])
-    assert result.ret != 1
+                        """
+    )
+    result = pytester.runpytest("--zephyr")
+    assert result.ret == 0
