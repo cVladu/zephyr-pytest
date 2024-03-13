@@ -20,7 +20,7 @@ def _fmt_zephyr_error(msg: str):
 class ZephyrManager:
 
     @classmethod
-    def _load_config_params(cls, config: pytest.Config) -> "ZephyrManager | None":
+    def _load_config_params(cls, config: pytest.Config) -> Optional["ZephyrManager"]:
         kwargs = {}
         mandatory_params = [
             "zephyr_auth_token",
@@ -55,7 +55,7 @@ class ZephyrManager:
             zephyr_manager = cls(**kwargs)
         except Exception as reason:
             healthy = False
-            error_string = f"Could not connect to Zephyr. Reason: {reason}"
+            error_string = f"Could not connect to Zephyr. Reason: {repr(reason)}"
         if not healthy:
             if strict:
                 raise _fmt_zephyr_error(error_string)
@@ -77,10 +77,10 @@ class ZephyrManager:
             token=auth_token, api_version=API_V2
         )
         self.project_key = project_key
-        self.testcases: List[ZephyrTestCase] = []
         self.project_id = self.zephyr_instance.api.projects.get_project(
             self.project_key
         )["id"]
+        self.testcases: List[ZephyrTestCase] = self._get_all_testscases()
         zephyr_folders = self.zephyr_instance.api.folders.get_folders()
         folders_queue: queue.Queue[dict] = queue.Queue()
         for folder in zephyr_folders:
@@ -88,11 +88,17 @@ class ZephyrManager:
         self.root_folder = self._populate_root_folder(folders_queue)
         self.jira_instance = Jira(jira_base_url, jira_email, jira_token)
 
-    def _create_folder(self, name: str, parent_id: "int | None" = None) -> Folder:
-        new_folder = self.zephyr_instance.api.folders.create_folder(
-            name, self.project_key, TEST_CASE_FOLDER_TYPE, parentId=parent_id
+    def _get_all_testscases(self) -> List[ZephyrTestCase]:
+        ret: List[ZephyrTestCase] = []
+        zephyr_testcases = self.zephyr_instance.api.test_cases.get_test_cases(
+            projectKey=self.project_key
         )
-        return Folder(name, int(new_folder["id"]))
+        for testcase_dict in zephyr_testcases:
+            testcase = ZephyrTestCase(
+                testcase_dict["name"], testcase_dict["folder"]["id"]
+            )
+            ret.append(testcase)
+        return ret
 
     def _create_test_case(
         self,
@@ -100,9 +106,11 @@ class ZephyrManager:
         folder: Folder,
         jira_issues: Optional[List[str]],
         urls: Optional[List[str]],
-        test_steps: "Optional[List[str] | str]",
+        test_steps: Optional["List[str] | str"],
         extra_info: Mapping[str, Any],
-    ) -> "ZephyrTestCase | None":
+    ) -> None:
+        if ZephyrTestCase(name, folder.id) in self.testcases:
+            return
         new_test_case = self.zephyr_instance.api.test_cases.create_test_case(
             self.project_key, name, folderId=folder.id, **extra_info
         )
@@ -127,7 +135,13 @@ class ZephyrManager:
             )
         else:
             pass
-        return None
+        self.testcases.append(ZephyrTestCase(name, folder.id))
+
+    def _create_folder(self, name: str, parent_id: Optional[int] = None) -> Folder:
+        new_folder = self.zephyr_instance.api.folders.create_folder(
+            name, self.project_key, TEST_CASE_FOLDER_TYPE, parentId=parent_id
+        )
+        return Folder(name, int(new_folder["id"]))
 
     def _mkfolders(self, path: pathlib.Path) -> Folder:
         parent_folder = self.root_folder
@@ -186,7 +200,7 @@ class ZephyrManager:
             test_steps = test_case_info.get("test_steps", [])
             # TODO: Make this prettier
             if test_steps == "doc":
-                test_steps = item.obj.__doc__
+                test_steps = item.obj.__doc__  # type: ignore[attr-defined]
             self._create_test_case(
                 name, tmp_folder, jira_issues, urls, test_steps, test_case_info
             )
