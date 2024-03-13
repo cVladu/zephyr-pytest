@@ -11,7 +11,9 @@ def test_zephyr_without_project_key(pytester):
 
     result = pytester.runpytest("--zephyr")
 
-    result.stderr.fnmatch_lines("*ValueError: zephyr: The following mandatory params not found in pytest ini file or sys env vars:")
+    result.stderr.fnmatch_lines(
+        "*zephyr: The following mandatory params not found in pytest ini file or sys env vars:"
+    )
     result.stderr.fnmatch_lines("*zephyr_project_key*")
     result.stderr.fnmatch_lines("*zephyr_auth_token*")
     result.stderr.fnmatch_lines("*zephyr_jira_base_url*")
@@ -35,7 +37,9 @@ def test_zephyr_without_auth_token(pytester, project_key):
                         """
     )
     result = pytester.runpytest("--zephyr")
-    result.stderr.fnmatch_lines("*ValueError: zephyr: The following mandatory params not found in pytest ini file or sys env vars:")
+    result.stderr.fnmatch_lines(
+        "zephyr: The following mandatory params not found in pytest ini file or sys env vars:"
+    )
     result.stderr.fnmatch_lines("*zephyr_auth_token*")
     result.stderr.fnmatch_lines("*zephyr_jira_base_url*")
     result.stderr.fnmatch_lines("*zephyr_jira_email*")
@@ -59,7 +63,9 @@ def test_zephyr_without_jira_base_url(pytester, auth_token, project_key):
                         """
     )
     result = pytester.runpytest("--zephyr")
-    result.stderr.fnmatch_lines("*ValueError: zephyr: The following mandatory params not found in pytest ini file or sys env vars:")
+    result.stderr.fnmatch_lines(
+        "zephyr: The following mandatory params not found in pytest ini file or sys env vars:"
+    )
     result.stderr.fnmatch_lines("*zephyr_jira_base_url*")
     result.stderr.fnmatch_lines("*zephyr_jira_email*")
     result.stderr.fnmatch_lines("*zephyr_jira_token*")
@@ -83,7 +89,9 @@ def test_zephyr_without_jira_username(pytester, auth_token, project_key, jira_ba
                         """
     )
     result = pytester.runpytest("--zephyr")
-    result.stderr.fnmatch_lines("*ValueError: zephyr: The following mandatory params not found in pytest ini file or sys env vars:")
+    result.stderr.fnmatch_lines(
+        "zephyr: The following mandatory params not found in pytest ini file or sys env vars:"
+    )
     result.stderr.fnmatch_lines("*zephyr_jira_email*")
     result.stderr.fnmatch_lines("*zephyr_jira_token*")
     assert result.ret != 0
@@ -109,7 +117,9 @@ def test_zephyr_without_jira_token(
                         """
     )
     result = pytester.runpytest("--zephyr")
-    result.stderr.fnmatch_lines("*ValueError: zephyr: The following mandatory params not found in pytest ini file or sys env vars:")
+    result.stderr.fnmatch_lines(
+        "zephyr: The following mandatory params not found in pytest ini file or sys env vars:"
+    )
     result.stderr.fnmatch_lines("*zephyr_jira_token*")
     assert result.ret != 0
 
