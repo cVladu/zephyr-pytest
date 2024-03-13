@@ -1,24 +1,20 @@
 # -*- coding: utf-8 -*-
-import json
 import os
 import pathlib
 import queue
-from datetime import timedelta
-from typing import Any, Mapping, Optional
+from typing import Any, List, Mapping, Optional
 
 import pytest
-from pytest import PytestCollectionWarning, PytestConfigWarning
-from requests.exceptions import HTTPError
-from zephyr import API_V2, ZephyrScale
+from pytest import PytestConfigWarning
+from zephyr import API_V2, ZephyrScale  # type: ignore[import]
 
 from ._jira_integration import Jira
-from .zephyr_interface.zephyr_folder_structure import (TEST_CASE_FOLDER_TYPE,
-                                                       Folder)
+from .zephyr_interface.zephyr_folder_structure import TEST_CASE_FOLDER_TYPE, Folder
 from .zephyr_interface.zephyr_test_case import ZephyrTestCase
 
 
 def _fmt_zephyr_error(msg: str):
-    return ValueError(f"zephyr: {msg}")
+    return RuntimeError(f"zephyr: {msg}")
 
 
 class ZephyrManager:
@@ -81,18 +77,18 @@ class ZephyrManager:
             token=auth_token, api_version=API_V2
         )
         self.project_key = project_key
-        self.testcases = []
+        self.testcases: List[ZephyrTestCase] = []
         self.project_id = self.zephyr_instance.api.projects.get_project(
             self.project_key
         )["id"]
         zephyr_folders = self.zephyr_instance.api.folders.get_folders()
-        folders_queue = queue.Queue()
+        folders_queue: queue.Queue[dict] = queue.Queue()
         for folder in zephyr_folders:
             folders_queue.put(folder)
         self.root_folder = self._populate_root_folder(folders_queue)
         self.jira_instance = Jira(jira_base_url, jira_email, jira_token)
 
-    def _create_folder(self, name: str, parent_id: int | None = None) -> Folder:
+    def _create_folder(self, name: str, parent_id: "int | None" = None) -> Folder:
         new_folder = self.zephyr_instance.api.folders.create_folder(
             name, self.project_key, TEST_CASE_FOLDER_TYPE, parentId=parent_id
         )
@@ -102,11 +98,11 @@ class ZephyrManager:
         self,
         name: str,
         folder: Folder,
-        jira_issues: Optional[list[str]],
-        urls: Optional[list[str]],
-        test_steps: Optional[list[str] | str],
+        jira_issues: Optional[List[str]],
+        urls: Optional[List[str]],
+        test_steps: "Optional[List[str] | str]",
         extra_info: Mapping[str, Any],
-    ) -> ZephyrTestCase | None:
+    ) -> "ZephyrTestCase | None":
         new_test_case = self.zephyr_instance.api.test_cases.create_test_case(
             self.project_key, name, folderId=folder.id, **extra_info
         )
@@ -131,7 +127,6 @@ class ZephyrManager:
             )
         else:
             pass
-            # self.zephyr_instance.api.test_cases.post_test_steps(test_case_key, mode="OVERWRITE", steps=test_steps)
         return None
 
     def _mkfolders(self, path: pathlib.Path) -> Folder:
@@ -172,7 +167,7 @@ class ZephyrManager:
         isinstance(session, pytest.Session)
 
     def pytest_collection_modifyitems(
-        self, session: pytest.Session, config: pytest.Config, items: list[pytest.Item]
+        self, session: pytest.Session, config: pytest.Config, items: List[pytest.Item]
     ):
         isinstance(session, pytest.Session)
         isinstance(config, pytest.Config)
@@ -213,7 +208,7 @@ def pytest_addoption(parser):
     parser.addini("zephyr_auth_token", help="Zephyr auth token", type="string")
     parser.addini(
         "zephyr_strict",
-        help="Whether to raise an error (True) or issue a warning (False) if Zephyr is not available. Default False",
+        help="Whether to raise an error (True) or issue a warning (False) if Zephyr is not available. Default False",  # noqa: E501
         type="bool",
     )
     parser.addini(
