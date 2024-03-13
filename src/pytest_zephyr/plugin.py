@@ -2,7 +2,7 @@
 import os
 import pathlib
 import queue
-from typing import Any, List, Mapping, Optional
+from typing import Any, List, Mapping, Optional, Dict
 
 import pytest
 from pytest import PytestConfigWarning
@@ -10,7 +10,7 @@ from zephyr import API_V2, ZephyrScale  # type: ignore[import]
 
 from ._jira_integration import Jira
 from .zephyr_interface.zephyr_folder_structure import TEST_CASE_FOLDER_TYPE, Folder
-from .zephyr_interface.zephyr_test_case import ZephyrTestCase
+from .zephyr_interface.zephyr_test_case import ZephyrTestCase, TEST_STEPS_OVERWRITE
 
 
 def _fmt_zephyr_error(msg: str):
@@ -106,7 +106,7 @@ class ZephyrManager:
         folder: Folder,
         jira_issues: Optional[List[str]],
         urls: Optional[List[str]],
-        test_steps: Optional["List[str] | str"],
+        test_steps: "List[Dict[str, str]] | str",
         extra_info: Mapping[str, Any],
     ) -> None:
         if ZephyrTestCase(name, folder.id) in self.testcases:
@@ -134,7 +134,19 @@ class ZephyrManager:
                 test_case_key, script_type="plain", text=test_steps
             )
         else:
-            pass
+            zephyr_test_steps = [
+                {
+                    "inline": {
+                        "description": ts["step"],
+                        "testData": "",
+                        "expectedResult": ts.get("expected", ""),
+                    }
+                }
+                for ts in test_steps
+            ]
+            self.zephyr_instance.api.test_cases.post_test_steps(
+                test_case_key, mode=TEST_STEPS_OVERWRITE, items=zephyr_test_steps
+            )
         self.testcases.append(ZephyrTestCase(name, folder.id))
 
     def _create_folder(self, name: str, parent_id: Optional[int] = None) -> Folder:
@@ -197,7 +209,7 @@ class ZephyrManager:
             test_case_info = zephyr_marker.kwargs
             jira_issues = test_case_info.get("jira_issues", None)
             urls = test_case_info.get("urls", None)
-            test_steps = test_case_info.get("test_steps", [])
+            test_steps = test_case_info.get("test_steps", "doc")
             # TODO: Make this prettier
             if test_steps == "doc":
                 test_steps = item.obj.__doc__  # type: ignore[attr-defined]
