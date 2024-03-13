@@ -1,18 +1,22 @@
 ====================
-pytest-zephyr-pytest
+pytest-zephyr
 ====================
 
-.. image:: https://img.shields.io/pypi/v/pytest-zephyr-pytest.svg
-    :target: https://pypi.org/project/pytest-zephyr-pytest
+.. image:: https://img.shields.io/pypi/v/pytest-zephyr.svg
+    :target: https://pypi.org/project/pytest-zephyr
     :alt: PyPI version
 
-.. image:: https://img.shields.io/pypi/pyversions/pytest-zephyr-pytest.svg
-    :target: https://pypi.org/project/pytest-zephyr-pytest
+.. image:: https://img.shields.io/pypi/pyversions/pytest-zephyr.svg
+    :target: https://pypi.org/project/pytest-zephyr
     :alt: Python versions
 
-.. image:: https://github.com/cVladu/pytest-zephyr-pytest/actions/workflows/main.yml/badge.svg
-    :target: https://github.com/cVladu/pytest-zephyr-pytest/actions/workflows/main.yml
+.. image:: https://github.com/cVladu/pytest-zephyr/actions/workflows/main.yml/badge.svg
+    :target: https://github.com/cVladu/pytest-zephyr/actions/workflows/main.yml
     :alt: See Build Status on GitHub Actions
+
+.. image:: https://results.pre-commit.ci/badge/github/cVladu/pytest-zephyr/master.svg
+   :target: https://results.pre-commit.ci/latest/github/cVladu/pytest-zephyr/master
+   :alt: pre-commit.ci status
 
 A plugin to automate Zephyr integration with pytest
 
@@ -36,9 +40,9 @@ Requirements
 Installation
 ------------
 
-You can install "pytest-zephyr-pytest" via `pip`_ from `PyPI`_::
+You can install "pytest-zephyr" via `pip`_ from `PyPI`_::
 
-    $ pip install pytest-zephyr-pytest
+    $ pip install pytest-zephyr
 
 
 Usage
@@ -54,7 +58,7 @@ the coverage at least stays the same before you submit a pull request.
 License
 -------
 
-Distributed under the terms of the `MIT`_ license, "pytest-zephyr-pytest" is free and open source software
+Distributed under the terms of the `MIT`_ license, "pytest-zephyr" is free and open source software
 
 
 Issues
@@ -69,7 +73,7 @@ If you encounter any problems, please `file an issue`_ along with a detailed des
 .. _`GNU GPL v3.0`: https://www.gnu.org/licenses/gpl-3.0.txt
 .. _`Apache Software License 2.0`: https://www.apache.org/licenses/LICENSE-2.0
 .. _`cookiecutter-pytest-plugin`: https://github.com/pytest-dev/cookiecutter-pytest-plugin
-.. _`file an issue`: https://github.com/cVladu/pytest-zephyr-pytest/issues
+.. _`file an issue`: https://github.com/cVladu/pytest-zephyr/issues
 .. _`pytest`: https://github.com/pytest-dev/pytest
 .. _`tox`: https://tox.readthedocs.io/en/latest/
 .. _`pip`: https://pypi.org/project/pip/

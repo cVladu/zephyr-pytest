@@ -1,1 +1,2 @@
-pytest_plugins = 'pytester'
+# -*- coding: utf-8 -*-
+pytest_plugins = "pytester"
