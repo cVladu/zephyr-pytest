@@ -217,8 +217,6 @@ class ZephyrManager:
         if config.option.zephyr_no_publish:
             return
         for item in items:
-            print("Collecting...")
-            print(item.nodeid)
             zephyr_marker = item.get_closest_marker("zephyr_testcase")
             if zephyr_marker:
                 path, name = item.nodeid.rsplit("::", maxsplit=1)
@@ -284,7 +282,7 @@ class ZephyrManager:
                     self.testcycle_key,
                     _result_mapping(result),
                     executedById=self.owner_id,
-                    executionTime=duration,
+                    executionTime=duration * 1000,  # in milliseconds
                     comment=comment,
                 )
 

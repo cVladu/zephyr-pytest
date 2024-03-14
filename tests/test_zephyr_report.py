@@ -278,3 +278,37 @@ def test_sth():
     )
     result = pytester.runpytest("--zephyr")
     assert result.ret == 0
+
+
+def test_zephyr_report_estimated_time(
+    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
+):
+    """
+    Check that zephyr correctly reports estimated time for a test case
+    """
+    pytester.makeini(
+        f"""
+[pytest]
+zephyr_project_key = {project_key}
+zephyr_auth_token = {auth_token}
+zephyr_jira_base_url = {jira_base_url}
+zephyr_jira_email = {jira_email}
+zephyr_jira_token = {jira_token}
+zephyr_strict = True
+zephyr_testcycle_name = Test Cycle Estimated Time
+"""
+    )
+    pytester.makepyfile(
+        """
+import pytest
+from time import sleep
+from random import randint
+@pytest.mark.zephyr_testcase()
+def test_sth():
+    sleep(randint(1, 20))
+    assert 1 + 2 == 3
+"""
+    )
+    for _ in range(50):
+        result = pytester.runpytest("--zephyr")
+        assert result.ret == 0
