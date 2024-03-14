@@ -29,7 +29,7 @@ zephyr_strict = True
                             assert True
                         """
     )
-    result = pytester.runpytest("--zephyr")
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish")
     assert result.ret == 0
 
 
@@ -63,7 +63,7 @@ zephyr_strict = True
                                 assert True
                         """
     )
-    result = pytester.runpytest("--zephyr")
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish")
     assert result.ret == 0
 
 
@@ -123,7 +123,7 @@ def test_depth_something_else():
     assert True
                 """
         )
-    result = pytester.runpytest("--zephyr")
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish")
     assert result.ret == 0
 
 
@@ -157,9 +157,9 @@ def test_depth():
     assert True
     """
         )
-    result = pytester.runpytest("--zephyr")
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish")
     assert result.ret == 0
-    result = pytester.runpytest("--zephyr")
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish")
     assert result.ret == 0
 
 
@@ -190,7 +190,7 @@ def test_depth():
     assert True
     """
         )
-    result = pytester.runpytest("--zephyr")
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish")
     assert result.ret == 0
 
     testdir.mkdir("test_mix/test_d")
@@ -225,7 +225,7 @@ def test_depth():
     """
         )
 
-    result = pytester.runpytest("--zephyr")
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish")
     assert result.ret == 0
 
 
@@ -263,7 +263,7 @@ import pytest
 def test_depth(input, expected):
     assert input + 1 == expected """
         )
-    result = pytester.runpytest("--zephyr", "test_parametrized")
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish", "test_parametrized")
     assert result.ret == 0
 
 
@@ -292,7 +292,7 @@ def test_sth():
     assert True
 """
     )
-    result = pytester.runpytest("--zephyr")
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish")
     assert result.ret == 0
 
 
@@ -320,7 +320,7 @@ def test_zephyr_creating_with_jira_issues(
     jira_issues,
 ):
     """
-    Check that the plugin correctly creates the test case in zephyr given the marker
+    Check that the plugin correctly links the issues to the created test case
     """
     pytester.makeini(
         f"""
@@ -343,7 +343,7 @@ def {test_name}():
     assert True
 """
     )
-    result = pytester.runpytest("--zephyr")
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish")
     assert result.ret == 0
 
 
@@ -351,7 +351,8 @@ def test_zephyr_creating_with_marker_extra_kwarg(
     pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
 ):
     """
-    Check that the plugin correctly creates the test case in zephyr given the marker
+    Check that the plugin correctly creates the test case in zephyr
+    given the marker with extra kwarg
     """
     pytester.makeini(
         f"""
@@ -372,7 +373,7 @@ def test_sth():
     assert True
 """
     )
-    result = pytester.runpytest("--zephyr")
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish")
     assert result.ret == 0
 
 
@@ -380,7 +381,77 @@ def test_zephyr_creating_with_teststeps_docstring(
     pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
 ):
     """
-    Check that the plugin correctly creates the test case in zephyr given the marker
+    Check that the plugin correctly creates the test steps from __doc__
+    """
+    pytester.makeini(
+        f"""
+[pytest]
+zephyr_project_key = {project_key}
+zephyr_auth_token = {auth_token}
+zephyr_jira_base_url = {jira_base_url}
+zephyr_jira_email = {jira_email}
+zephyr_jira_token = {jira_token}
+zephyr_strict = True
+                         """
+    )
+    pytester.makepyfile(
+        """
+import pytest
+@pytest.mark.zephyr_testcase(test_steps="doc")
+def test_sth():
+    \"\"\"This is a test case
+    Test steps:
+        1. Do something
+        2. Do something else
+        3. Do something else again
+    \"\"\"
+    assert True
+"""
+    )
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish")
+    assert result.ret == 0
+
+
+def test_zephyr_creating_with_teststeps_list(
+    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
+):
+    """
+    Check that the plugin correctly creates the test steps from list
+    """
+    pytester.makeini(
+        f"""
+[pytest]
+zephyr_project_key = {project_key}
+zephyr_auth_token = {auth_token}
+zephyr_jira_base_url = {jira_base_url}
+zephyr_jira_email = {jira_email}
+zephyr_jira_token = {jira_token}
+zephyr_strict = True
+                         """
+    )
+    pytester.makepyfile(
+        """ # noqa: E501
+import pytest
+@pytest.mark.zephyr_testcase(test_steps=[{"step": "Do something", "expected": "Something happened"}, {"step": "Do something without expectation"}, {"step": "Do final thing", "expected": "Final thing happened"}])
+def test_sth():
+    \"\"\"This is a test case
+    Test steps:
+        1. Do something
+        2. Do something else
+        3. Do something else again
+    \"\"\"
+    assert True
+"""
+    )
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish")
+    assert result.ret == 0
+
+
+def test_zephyr_creating_test_cycle_default_name(
+    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
+):
+    """
+    Check that the plugin correctly creates the test cycle given no name
     """
     pytester.makeini(
         f"""
@@ -411,11 +482,11 @@ def test_sth():
     assert result.ret == 0
 
 
-def test_zephyr_creating_with_teststeps_list(
+def test_zephyr_creating_test_cycle_given_name(
     pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
 ):
     """
-    Check that the plugin correctly creates the test case in zephyr given the marker
+    Check that the plugin correctly creates the test cycle given only name
     """
     pytester.makeini(
         f"""
@@ -426,12 +497,13 @@ zephyr_jira_base_url = {jira_base_url}
 zephyr_jira_email = {jira_email}
 zephyr_jira_token = {jira_token}
 zephyr_strict = True
+zephyr_testcycle_name = "Custom Name"
                          """
     )
     pytester.makepyfile(
-        """ # noqa: E501
+        """
 import pytest
-@pytest.mark.zephyr_testcase(test_steps=[{"step": "Do something", "expected": "Something happened"}, {"step": "Do something without expectation"}, {"step": "Do final thing", "expected": "Final thing happened"}])
+@pytest.mark.zephyr_testcase(test_steps="doc")
 def test_sth():
     \"\"\"This is a test case
     Test steps:
@@ -443,4 +515,191 @@ def test_sth():
 """
     )
     result = pytester.runpytest("--zephyr")
+    assert result.ret == 0
+
+
+def test_zephyr_creating_test_cycle_given_description(
+    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
+):
+    """
+    Check that the plugin correctly creates the test cycle given only description
+    """
+    pytester.makeini(
+        f"""
+[pytest]
+zephyr_project_key = {project_key}
+zephyr_auth_token = {auth_token}
+zephyr_jira_base_url = {jira_base_url}
+zephyr_jira_email = {jira_email}
+zephyr_jira_token = {jira_token}
+zephyr_strict = True
+zephyr_testcycle_description = Custom Description. Is this shown?
+                         """
+    )
+    pytester.makepyfile(
+        """
+import pytest
+@pytest.mark.zephyr_testcase(test_steps="doc")
+def test_sth():
+    \"\"\"This is a test case
+    Test steps:
+        1. Do something
+        2. Do something else
+        3. Do something else again
+    \"\"\"
+    assert True
+"""
+    )
+    result = pytester.runpytest("--zephyr")
+    assert result.ret == 0
+
+
+def test_zephyr_creating_test_cycle_given_name_and_description(
+    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
+):
+    """
+    Check that the plugin correctly creates the test cycle given name and description
+    """
+    pytester.makeini(
+        f"""
+[pytest]
+zephyr_project_key = {project_key}
+zephyr_auth_token = {auth_token}
+zephyr_jira_base_url = {jira_base_url}
+zephyr_jira_email = {jira_email}
+zephyr_jira_token = {jira_token}
+zephyr_strict = True
+zephyr_testcycle_name = Custom Name 2
+zephyr_testcycle_description = Custom Description. Is this shown?
+                         """
+    )
+    pytester.makepyfile(
+        """
+import pytest
+@pytest.mark.zephyr_testcase(test_steps="doc")
+def test_sth():
+    \"\"\"This is a test case
+    Test steps:
+        1. Do something
+        2. Do something else
+        3. Do something else again
+    \"\"\"
+    assert True
+"""
+    )
+    result = pytester.runpytest("--zephyr")
+    assert result.ret == 0
+
+
+def test_zephyr_creating_test_cycle_link_to_test_plan(
+    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
+):
+    """
+    Check that the plugin correctly creates the test cycle and links to test plan
+    """
+    pytester.makeini(
+        f"""
+[pytest]
+zephyr_project_key = {project_key}
+zephyr_auth_token = {auth_token}
+zephyr_jira_base_url = {jira_base_url}
+zephyr_jira_email = {jira_email}
+zephyr_jira_token = {jira_token}
+zephyr_strict = True
+zephyr_testcycle_name = Test Cycle Linked To Test Plan
+zephyr_testcycle_description = Custom Description. Is this shown?
+zephyr_testplan_id = FP-P1
+"""
+    )
+    pytester.makepyfile(
+        """
+import pytest
+@pytest.mark.zephyr_testcase(test_steps="doc")
+def test_sth():
+    \"\"\"This is a test case
+    Test steps:
+        1. Do something
+        2. Do something else
+        3. Do something else again
+    \"\"\"
+    assert True
+"""
+    )
+    result = pytester.runpytest("--zephyr")
+    assert result.ret == 0
+
+
+def test_zephyr_creating_test_cycle_link_to_test_plan_without_project_key(
+    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
+):
+    """
+    Check that the plugin correctly creates the test cycle and links to test plan
+    """
+    pytester.makeini(
+        f"""
+[pytest]
+zephyr_project_key = {project_key}
+zephyr_auth_token = {auth_token}
+zephyr_jira_base_url = {jira_base_url}
+zephyr_jira_email = {jira_email}
+zephyr_jira_token = {jira_token}
+zephyr_strict = True
+zephyr_testcycle_name = Test Cycle Linked To Test Plan
+zephyr_testcycle_description = Custom Description. Is this shown?
+zephyr_testplan_id = P1
+"""
+    )
+    pytester.makepyfile(
+        """
+import pytest
+@pytest.mark.zephyr_testcase(test_steps="doc")
+def test_sth():
+    \"\"\"This is a test case
+    Test steps:
+        1. Do something
+        2. Do something else
+        3. Do something else again
+    \"\"\"
+    assert 1 + 2 == 3
+"""
+    )
+    result = pytester.runpytest("--zephyr")
+    assert result.ret == 0
+
+
+def test_zephyr_creasting_test_cycle_owner(
+    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
+):
+
+    pytester.makeini(
+        f"""
+[pytest]
+zephyr_project_key = {project_key}
+zephyr_auth_token = {auth_token}
+zephyr_jira_base_url = {jira_base_url}
+zephyr_jira_email = {jira_email}
+zephyr_jira_token = {jira_token}
+zephyr_strict = True
+zephyr_testcycle_name = Test Cycle With Owner
+zephyr_testcycle_description = Custom Description. Is this shown?
+zephyr_testplan_id = P1
+"""
+    )
+    pytester.makepyfile(
+        """
+import pytest
+@pytest.mark.zephyr_testcase(test_steps="doc")
+def test_sth():
+    \"\"\"This is a test case
+    Test steps:
+        1. Do something
+        2. Do something else
+        3. Do something else again
+    \"\"\"
+    assert 1 + 2 == 3
+"""
+    )
+    result = pytester.runpytest(
+        "--zephyr", "--zephyr-owner-id=5c6db07284926c623fb1b347"
+    )
     assert result.ret == 0

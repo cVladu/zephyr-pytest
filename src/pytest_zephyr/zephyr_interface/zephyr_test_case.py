@@ -8,6 +8,7 @@ TEST_STEPS_APPEND = "APPEND"
 
 @dataclass
 class ZephyrTestCase:
+    key: str
     name: str
     parent_folder_id: Optional[int]
 
