@@ -12,19 +12,36 @@ from ._jira_integration import Jira
 from .zephyr_interface.zephyr_folder_structure import TEST_CASE_FOLDER_TYPE, Folder
 from .zephyr_interface.zephyr_test_case import ZephyrTestCase, TEST_STEPS_OVERWRITE
 
+_default_report_mapping = {
+    "passed": "Pass",
+    "failed": "Fail",
+    "skipped": "Not Executed",
+    "xfailed": "Blocked",
+    "xpassed": "Fail",
+}
+
+report_mapping = _default_report_mapping
+
 
 def _fmt_zephyr_error(msg: str):
     return RuntimeError(f"zephyr: {msg}")
 
 
+def register_report_mapping(mapping: Dict[str, str]):
+    def _validate_mapping(mapping: Dict[str, str]):
+        assert "passed" in mapping, "passed not found in mapping"
+        assert "failed" in mapping, "failed not found in mapping"
+        assert "xfailed" in mapping, "xfailed not found in mapping"
+        assert "xpassed" in mapping, "xpassed not found in mapping"
+        assert "skipped" in mapping, "skipped not found in mapping"
+
+    _validate_mapping(mapping)
+    global report_mapping
+    report_mapping = mapping
+
+
 def _result_mapping(result: str) -> str:
-    return {
-        "passed": "Pass",
-        "failed": "Fail",
-        "skipped": "Not Executed",
-        "xfailed": "Blocked",
-        "xpassed": "Fail",
-    }[result]
+    return report_mapping[result]
 
 
 class ZephyrManager:

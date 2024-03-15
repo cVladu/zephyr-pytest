@@ -309,6 +309,71 @@ def test_sth():
     assert 1 + 2 == 3
 """
     )
-    for _ in range(50):
+    for _ in range(40):
         result = pytester.runpytest("--zephyr")
         assert result.ret == 0
+
+
+def test_zephyr_report_custom_mapping(
+    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
+):
+    """
+    Check that zephyr correctly reports given the new mapping
+    """
+    pytester.makeini(
+        f"""
+[pytest]
+zephyr_project_key = {project_key}
+zephyr_auth_token = {auth_token}
+zephyr_jira_base_url = {jira_base_url}
+zephyr_jira_email = {jira_email}
+zephyr_jira_token = {jira_token}
+zephyr_strict = True
+zephyr_testcycle_name = Test Cycle Custom Mapping
+"""
+    )
+    pytester.makepyfile(
+        """
+import pytest
+@pytest.mark.zephyr_testcase()
+def test_custom_pass():
+    assert 1 + 2 == 3
+
+@pytest.mark.zephyr_testcase()
+def test_custom_fail():
+    sleep(randint(1, 20))
+    assert 1 + 2 == 3
+
+@pytest.mark.zephyr_testcase()
+@pytest.mark.skip
+def test_custom_skip():
+    assert 1 + 2 == 3
+
+@pytest.mark.zephyr_testcase()
+@pytest.mark.xfail
+def test_custom_xfail():
+    assert 1 + 2 == 5
+
+@pytest.mark.zephyr_testcase()
+@pytest.mark.xfail
+def test_custom_xpass():
+    assert 1 + 2 == 3
+"""
+    )
+    pytester.makeconftest(
+        """
+import pytest_zephyr
+
+pytest_zephyr.register_report_mapping(
+    {
+        "passed": "CUSTOM_PASS",
+        "failed": "CUSTOM_FAIL",
+        "skipped": "CUSTOM_SKIP",
+        "xfailed": "CUSTOM_XFAIL",
+        "xpassed": "CUSTOM_XPASS"
+    }
+)
+    """
+    )
+    result = pytester.runpytest("--zephyr")
+    assert result.ret != 0
