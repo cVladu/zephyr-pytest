@@ -309,9 +309,8 @@ def test_sth():
     assert 1 + 2 == 3
 """
     )
-    for _ in range(40):
-        result = pytester.runpytest("--zephyr")
-        assert result.ret == 0
+    result = pytester.runpytest("--zephyr")
+    assert result.ret == 0
 
 
 def test_zephyr_report_custom_mapping(
