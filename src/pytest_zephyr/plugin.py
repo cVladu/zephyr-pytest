@@ -2,15 +2,21 @@
 import os
 import pathlib
 import queue
-from typing import Any, List, Mapping, Optional, Dict
+from typing import Any, List, Optional, Dict, Tuple
+from requests import HTTPError  # type: ignore[import]
 
 import pytest
 from pytest import PytestConfigWarning
 from zephyr import API_V2, ZephyrScale  # type: ignore[import]
 
 from ._jira_integration import Jira
-from .zephyr_interface.zephyr_folder_structure import TEST_CASE_FOLDER_TYPE, Folder
-from .zephyr_interface.zephyr_test_case import ZephyrTestCase, TEST_STEPS_OVERWRITE
+from ._zephyr_interface import (
+    Folder,
+    ZephyrTestCase,
+    TEST_STEPS_OVERWRITE,
+    TEST_CASE_FOLDER_TYPE,
+)
+
 
 _default_report_mapping = {
     "passed": "Pass",
@@ -80,7 +86,7 @@ class ZephyrManager:
         zephyr_manager = None
         try:
             zephyr_manager = cls(**kwargs)
-        except Exception as reason:
+        except HTTPError as reason:
             healthy = False
             error_string = f"Could not connect to Zephyr. Reason: {repr(reason)}"
         if not healthy:
@@ -104,9 +110,9 @@ class ZephyrManager:
             token=auth_token, api_version=API_V2
         )
         self.project_key = project_key
-        self.project_id = self.zephyr_instance.api.projects.get_project(
-            self.project_key
-        )["id"]
+        self.project_id = int(
+            self.zephyr_instance.api.projects.get_project(self.project_key)["id"]
+        )
         self.testcases: List[ZephyrTestCase] = self._get_all_testscases()
         zephyr_folders = self.zephyr_instance.api.folders.get_folders()
         folders_queue: queue.Queue[dict] = queue.Queue()
@@ -115,7 +121,33 @@ class ZephyrManager:
         self.root_folder = self._populate_root_folder(folders_queue)
         self.jira_instance = Jira(jira_base_url, jira_email, jira_token)
         self.testcycle_key = None
-        self.owner_id: "str | None" = None
+        self.executor_id: "str | None" = None
+        self.priority_mapping, self.default_priority = self._get_priority_mapping()
+        self.status_mapping, self.default_status = self._get_status_mapping()
+
+    def _get_priority_mapping(self) -> Tuple[Dict[str, int], str]:
+        priorities = self.zephyr_instance.api.priorities.get_priorities(
+            projectKey=self.project_key
+        )
+        ret = {}
+        default_priority = ""
+        for priority in priorities:
+            ret[priority["name"]] = priority["id"]
+            if priority["default"]:
+                default_priority = priority["name"]
+        return ret, default_priority
+
+    def _get_status_mapping(self) -> Tuple[Dict[str, int], str]:
+        statuses = self.zephyr_instance.api.statuses.get_statuses(
+            projectKey=self.project_key, statusType="TEST_CASE"
+        )
+        ret = {}
+        default_status = ""
+        for status in statuses:
+            ret[status["name"]] = status["id"]
+            if status["default"]:
+                default_status = status["name"]
+        return ret, default_status
 
     def _get_all_testscases(self) -> List[ZephyrTestCase]:
         ret: List[ZephyrTestCase] = []
@@ -123,13 +155,46 @@ class ZephyrManager:
             projectKey=self.project_key
         )
         for testcase_dict in zephyr_testcases:
+            folder_id = None
+            ownerId = None
+            if testcase_dict["folder"]:
+                folder_id = testcase_dict["folder"]["id"]
+            if testcase_dict["owner"]:
+                ownerId = testcase_dict["owner"]["accountId"]
             testcase = ZephyrTestCase(
-                testcase_dict["key"],
-                testcase_dict["name"],
-                testcase_dict["folder"]["id"],
+                project_id=testcase_dict["project"]["id"],
+                priorityId=testcase_dict["priority"]["id"],
+                statusId=testcase_dict["status"]["id"],
+                folder_id=folder_id,
+                owner_id=ownerId,
+                jira_issues=[
+                    issue["issueId"] for issue in testcase_dict["links"]["issues"]
+                ],
+                urls=[weblink["url"] for weblink in testcase_dict["links"]["webLinks"]],
+                jira_issues_links={
+                    issue["issueId"]: issue["id"]
+                    for issue in testcase_dict["links"]["issues"]
+                },
+                urls_links={
+                    weblink["url"]: weblink["id"]
+                    for weblink in testcase_dict["links"]["webLinks"]
+                },
+                **testcase_dict,
             )
             ret.append(testcase)
         return ret
+
+    def _maybe_update_test_case(
+        self, collected_test_case: ZephyrTestCase, original_test_case: ZephyrTestCase
+    ) -> None:
+        collected_dict = collected_test_case.to_dict()
+        original_dict = original_test_case.to_dict()
+        if collected_dict != original_dict:
+            self.zephyr_instance.api.test_cases.update_test_case(
+                test_case_key=collected_test_case.key,
+                test_case_id=collected_test_case.id,
+                **collected_dict,
+            )
 
     def _create_test_case(
         self,
@@ -138,34 +203,93 @@ class ZephyrManager:
         jira_issues: Optional[List[str]],
         urls: Optional[List[str]],
         test_steps: "List[Dict[str, str]] | str",
-        extra_info: Mapping[str, Any],
+        extra_info: Dict[str, Any],
     ) -> str:
-        # We do not care about key when searching
-        if ZephyrTestCase("", name, folder.id) in self.testcases:
-            idx_found = self.testcases.index(ZephyrTestCase("", name, folder.id))
-            return self.testcases[idx_found].key
-
-        new_test_case = self.zephyr_instance.api.test_cases.create_test_case(
-            self.project_key, name, folderId=folder.id, **extra_info
-        )
-        test_case_key: str = new_test_case["key"]
         if not jira_issues:
             jira_issues = []
-        if not urls:
-            urls = []
+        issue_ids: List[int] = []
         for jira_issue in jira_issues:
             if jira_issue.isnumeric():
                 jira_issue = f"{self.project_key}-{jira_issue}"
-            jira_issue_id = self.jira_instance.get_issue_id(jira_issue)
-            self.zephyr_instance.api.test_cases.create_issue_links(
-                test_case_key, jira_issue_id
+            id_ = self.jira_instance.get_issue_id(jira_issue)
+            issue_ids.append(id_)
+        extra_info["jira_issues"] = issue_ids
+        if not urls:
+            urls = []
+        extra_info["urls"] = urls
+        # TODO: Remove these
+        extra_info["priority_id"] = self.priority_mapping.get(
+            extra_info.get("priorityName", self.default_priority)
+        )
+        extra_info["status_id"] = self.status_mapping.get(
+            extra_info.get("statusName", self.default_status)
+        )
+        collected_test_case = ZephyrTestCase(
+            name=name,
+            project_id=self.project_id,
+            folder_id=folder.id,
+            **extra_info,
+        )
+
+        try:
+            idx_found = self.testcases.index(collected_test_case)
+        except ValueError:
+            # index returns a positive number if found
+            idx_found = -1
+
+        if idx_found != -1:
+            found_test_case = self.testcases[idx_found]
+            # Copy values that are known only for existing test cases
+            collected_test_case.id = found_test_case.id
+            collected_test_case.key = found_test_case.key
+            collected_test_case.jira_issues_links = found_test_case.jira_issues_links
+            collected_test_case.urls_links = found_test_case.urls_links
+            self._maybe_update_test_case(collected_test_case, found_test_case)
+            issue_links_to_remove = set(found_test_case.jira_issues) - set(
+                collected_test_case.jira_issues
             )
-        for url in urls:
-            self.zephyr_instance.api.test_cases.create_web_links(test_case_key, url)
+            issues_to_create = set(collected_test_case.jira_issues) - set(
+                found_test_case.jira_issues
+            )
+            urls_links_to_remove = set(found_test_case.urls) - set(
+                collected_test_case.urls
+            )
+            urls_links_to_create = set(collected_test_case.urls) - set(
+                found_test_case.urls
+            )
+        else:
+            # Test case not found
+            response = self.zephyr_instance.api.test_cases.create_test_case(
+                self.project_key, name, folderId=folder.id, **extra_info
+            )
+            collected_test_case.key = response["key"]
+            collected_test_case.id = response["id"]
+            issue_links_to_remove = set()
+            issues_to_create = set(collected_test_case.jira_issues)
+            urls_links_to_remove = set()
+            urls_links_to_create = set(collected_test_case.urls)
+
+        for issue_id in issue_links_to_remove:
+            self.zephyr_instance.api.links.delete_link(
+                collected_test_case.jira_issues_links[issue_id]
+            )
+        for issue_id in issues_to_create:
+            self.zephyr_instance.api.test_cases.create_issue_links(
+                collected_test_case.key, issue_id
+            )
+        for url in urls_links_to_remove:
+            self.zephyr_instance.api.links.delete_link(
+                collected_test_case.urls_links[url]
+            )
+        for url in urls_links_to_create:
+            self.zephyr_instance.api.test_cases.create_web_links(
+                collected_test_case.key, url
+            )
+
         if isinstance(test_steps, str):
             test_steps = test_steps.replace("\n", "<br>")
             self.zephyr_instance.api.test_cases.create_test_script(
-                test_case_key, script_type="plain", text=test_steps
+                collected_test_case.key, script_type="plain", text=test_steps
             )
         else:
             zephyr_test_steps = [
@@ -179,10 +303,12 @@ class ZephyrManager:
                 for ts in test_steps
             ]
             self.zephyr_instance.api.test_cases.post_test_steps(
-                test_case_key, mode=TEST_STEPS_OVERWRITE, items=zephyr_test_steps
+                collected_test_case.key,
+                mode=TEST_STEPS_OVERWRITE,
+                items=zephyr_test_steps,
             )
-        self.testcases.append(ZephyrTestCase(test_case_key, name, folder.id))
-        return test_case_key
+        self.testcases.append(collected_test_case)
+        return collected_test_case.key
 
     def _create_folder(self, name: str, parent_id: Optional[int] = None) -> Folder:
         new_folder = self.zephyr_instance.api.folders.create_folder(
@@ -231,8 +357,6 @@ class ZephyrManager:
         self, session: pytest.Session, config: pytest.Config, items: List[pytest.Item]
     ):
         isinstance(session, pytest.Session)
-        if config.option.zephyr_no_publish:
-            return
         for item in items:
             zephyr_marker = item.get_closest_marker("zephyr_testcase")
             if zephyr_marker:
@@ -250,19 +374,23 @@ class ZephyrManager:
                 test_key = self._create_test_case(
                     name, tmp_folder, jira_issues, urls, test_steps, test_case_info
                 )
-                setattr(item, "zephyr_test_key", test_key)
+                # If we are not publishing, we don't need to store the test key
+                if not config.option.zephyr_no_publish:
+                    setattr(item, "zephyr_test_key", test_key)
+        if config.option.zephyr_no_publish:
+            return
         testcycle_name: str = config.getini("zephyr_testcycle_name")
         if not testcycle_name:
             testcycle_name = "Pytest run"
         testcycle_description = config.getini("zephyr_testcycle_description")
-        self.owner_id = config.option.zephyr_owner_id or os.environ.get(
+        self.executor_id = config.option.zephyr_owner_id or os.environ.get(
             "ZEPHYR_OWNER_ID"
         )
         response = self.zephyr_instance.api.test_cycles.create_test_cycle(
             project_key=self.project_key,
             name=testcycle_name,
             description=testcycle_description,
-            ownerId=self.owner_id,
+            ownerId=self.executor_id,
         )
         self.testcycle_key = response["key"]
         test_plan_id = config.getini("zephyr_testplan_id")
@@ -298,7 +426,7 @@ class ZephyrManager:
                     getattr(item, "zephyr_test_key"),
                     self.testcycle_key,
                     _result_mapping(result),
-                    executedById=self.owner_id,
+                    executedById=self.executor_id,
                     executionTime=duration * 1000,  # in milliseconds
                     comment=comment,
                 )
