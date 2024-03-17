@@ -927,7 +927,6 @@ def test_sth():
         """  # noqa: E501
 import pytest
 @pytest.mark.zephyr_testcase(objective=\"The objective of the test case\", precondition="A precondition", labels=[\"label_1\", \"label_2\"], estimatedTime=3600000, priorityName=\"High\", statusName=\"Approved\", ownerId=\"5c6db07284926c623fb1b347\",jira_issues=[\"TP-17\", \"TP-8\"])
-
 def test_sth():
     assert True
 """
@@ -1113,6 +1112,240 @@ zephyr_strict = True
         """  # noqa: E501
 import pytest
 @pytest.mark.zephyr_testcase(objective=\"The objective of the test case\", precondition="A precondition", labels=[\"label_1\", \"label_2\"], estimatedTime=3600000, priorityName=\"High\", statusName=\"Approved\", ownerId=\"5c6db07284926c623fb1b347\", jira_issues=[\"TP-17\", \"TP-8\"])
+def test_sth():
+    assert True
+"""
+    )
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish")
+    assert result.ret == 0
+    pytester.makepyfile(
+        """  # noqa: E501
+import pytest
+@pytest.mark.zephyr_testcase(objective=\"The objective of the test case\", precondition="A precondition", labels=[\"label_1\", \"label_2\"], estimatedTime=3600000, priorityName=\"High\", statusName=\"Approved\", ownerId=\"5c6db07284926c623fb1b347\")
+def test_sth():
+    assert True
+"""
+    )
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish")
+    assert result.ret == 0
+
+
+def test_zephyr_update_change_urls_one_common(
+    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
+):
+    """
+    Check that the plugin updates the urls of the test case
+    """
+    pytester.makeini(
+        f"""
+[pytest]
+zephyr_project_key = {project_key}
+zephyr_auth_token = {auth_token}
+zephyr_jira_base_url = {jira_base_url}
+zephyr_jira_email = {jira_email}
+zephyr_jira_token = {jira_token}
+zephyr_strict = True
+                         """
+    )
+    pytester.makepyfile(
+        """  # noqa: E501
+import pytest
+@pytest.mark.zephyr_testcase(objective=\"The objective of the test case\", precondition="A precondition", labels=[\"label_1\", \"label_2\"], estimatedTime=3600000, priorityName=\"High\", statusName=\"Approved\", ownerId=\"5c6db07284926c623fb1b347\", urls=[\"google.com\", \"example.com\"])
+def test_sth():
+    assert True
+"""
+    )
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish")
+    assert result.ret == 0
+    pytester.makepyfile(
+        """  # noqa: E501
+import pytest
+@pytest.mark.zephyr_testcase(objective=\"The objective of the test case\", precondition="A precondition", labels=[\"label_1\", \"label_2\"], estimatedTime=3600000, priorityName=\"High\", statusName=\"Approved\", ownerId=\"5c6db07284926c623fb1b347\", urls=[\"google.com\", \"facebook.com\"])
+def test_sth():
+    assert True
+"""
+    )
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish")
+    assert result.ret == 0
+
+
+def test_zephyr_update_change_urls_all(
+    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
+):
+    """
+    Check that the plugin updates the urls of the test case
+    """
+    pytester.makeini(
+        f"""
+[pytest]
+zephyr_project_key = {project_key}
+zephyr_auth_token = {auth_token}
+zephyr_jira_base_url = {jira_base_url}
+zephyr_jira_email = {jira_email}
+zephyr_jira_token = {jira_token}
+zephyr_strict = True
+                         """
+    )
+    pytester.makepyfile(
+        """  # noqa: E501
+import pytest
+@pytest.mark.zephyr_testcase(objective=\"The objective of the test case\", precondition="A precondition", labels=[\"label_1\", \"label_2\"], estimatedTime=3600000, priorityName=\"High\", statusName=\"Approved\", ownerId=\"5c6db07284926c623fb1b347\", urls=[\"google.com\", \"facebook.com\"])
+def test_sth():
+    assert True
+"""
+    )
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish")
+    assert result.ret == 0
+    pytester.makepyfile(
+        """  # noqa: E501
+import pytest
+@pytest.mark.zephyr_testcase(objective=\"The objective of the test case\", precondition="A precondition", labels=[\"label_1\", \"label_2\"], estimatedTime=3600000, priorityName=\"High\", statusName=\"Approved\", ownerId=\"5c6db07284926c623fb1b347\", urls=[\"example.com\", \"twitter.com\"])
+def test_sth():
+    assert True
+"""
+    )
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish")
+    assert result.ret == 0
+
+
+def test_zephyr_update_add_urls_empty(
+    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
+):
+    """
+    Check that the plugin adds the urls of the test case
+    """
+    pytester.makeini(
+        f"""
+[pytest]
+zephyr_project_key = {project_key}
+zephyr_auth_token = {auth_token}
+zephyr_jira_base_url = {jira_base_url}
+zephyr_jira_email = {jira_email}
+zephyr_jira_token = {jira_token}
+zephyr_strict = True
+                         """
+    )
+    pytester.makepyfile(
+        """  # noqa: E501
+import pytest
+@pytest.mark.zephyr_testcase(objective=\"The objective of the test case\", precondition="A precondition", labels=[\"label_1\", \"label_2\"], estimatedTime=3600000, priorityName=\"High\", statusName=\"Approved\", ownerId=\"5c6db07284926c623fb1b347\")
+def test_sth():
+    assert True
+"""
+    )
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish")
+    assert result.ret == 0
+    pytester.makepyfile(
+        """  # noqa: E501
+import pytest
+@pytest.mark.zephyr_testcase(objective=\"The objective of the test case\", precondition="A precondition", labels=[\"label_1\", \"label_2\"], estimatedTime=3600000, priorityName=\"High\", statusName=\"Approved\", ownerId=\"5c6db07284926c623fb1b347\", urls=[\"example.com\", \"twitter.com\"])
+def test_sth():
+    assert True
+"""
+    )
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish")
+    assert result.ret == 0
+
+
+def test_zephyr_update_add_urls_others(
+    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
+):
+    """
+    Check that the plugin adds the urls of the test case
+    """
+    pytester.makeini(
+        f"""
+[pytest]
+zephyr_project_key = {project_key}
+zephyr_auth_token = {auth_token}
+zephyr_jira_base_url = {jira_base_url}
+zephyr_jira_email = {jira_email}
+zephyr_jira_token = {jira_token}
+zephyr_strict = True
+                         """
+    )
+    pytester.makepyfile(
+        """  # noqa: E501
+import pytest
+@pytest.mark.zephyr_testcase(objective=\"The objective of the test case\", precondition="A precondition", labels=[\"label_1\", \"label_2\"], estimatedTime=3600000, priorityName=\"High\", statusName=\"Approved\", ownerId=\"5c6db07284926c623fb1b347\", urls=[\"example.com\", \"twitter.com\"])
+def test_sth():
+    assert True
+"""
+    )
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish")
+    assert result.ret == 0
+    pytester.makepyfile(
+        """  # noqa: E501
+import pytest
+@pytest.mark.zephyr_testcase(objective=\"The objective of the test case\", precondition="A precondition", labels=[\"label_1\", \"label_2\"], estimatedTime=3600000, priorityName=\"High\", statusName=\"Approved\", ownerId=\"5c6db07284926c623fb1b347\", urls=[\"example.com\", \"twitter.com\", \"facebook.com\"])
+def test_sth():
+    assert True
+"""
+    )
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish")
+    assert result.ret == 0
+
+
+def test_zephyr_update_remove_urls_some(
+    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
+):
+    """
+    Check that the plugin adds the urls of the test case
+    """
+    pytester.makeini(
+        f"""
+[pytest]
+zephyr_project_key = {project_key}
+zephyr_auth_token = {auth_token}
+zephyr_jira_base_url = {jira_base_url}
+zephyr_jira_email = {jira_email}
+zephyr_jira_token = {jira_token}
+zephyr_strict = True
+                         """
+    )
+    pytester.makepyfile(
+        """  # noqa: E501
+import pytest
+@pytest.mark.zephyr_testcase(objective=\"The objective of the test case\", precondition="A precondition", labels=[\"label_1\", \"label_2\"], estimatedTime=3600000, priorityName=\"High\", statusName=\"Approved\", ownerId=\"5c6db07284926c623fb1b347\", urls=[\"example.com\", \"twitter.com\", \"facebook.com\"])
+def test_sth():
+    assert True
+"""
+    )
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish")
+    assert result.ret == 0
+    pytester.makepyfile(
+        """  # noqa: E501
+import pytest
+@pytest.mark.zephyr_testcase(objective=\"The objective of the test case\", precondition="A precondition", labels=[\"label_1\", \"label_2\"], estimatedTime=3600000, priorityName=\"High\", statusName=\"Approved\", ownerId=\"5c6db07284926c623fb1b347\", urls=[\"facebook.com\"])
+def test_sth():
+    assert True
+"""
+    )
+    result = pytester.runpytest("--zephyr", "--zephyr-no-publish")
+    assert result.ret == 0
+
+
+def test_zephyr_update_remove_urls_all(
+    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
+):
+    """
+    Check that the plugin adds the urls of the test case
+    """
+    pytester.makeini(
+        f"""
+[pytest]
+zephyr_project_key = {project_key}
+zephyr_auth_token = {auth_token}
+zephyr_jira_base_url = {jira_base_url}
+zephyr_jira_email = {jira_email}
+zephyr_jira_token = {jira_token}
+zephyr_strict = True
+                         """
+    )
+    pytester.makepyfile(
+        """  # noqa: E501
+import pytest
+@pytest.mark.zephyr_testcase(objective=\"The objective of the test case\", precondition="A precondition", labels=[\"label_1\", \"label_2\"], estimatedTime=3600000, priorityName=\"High\", statusName=\"Approved\", ownerId=\"5c6db07284926c623fb1b347\", urls=[\"example.com\", \"twitter.com\", \"facebook.com\"])
 def test_sth():
     assert True
 """
