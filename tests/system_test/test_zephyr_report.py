@@ -1,10 +1,16 @@
 # -*- coding: utf-8 -*-
-def test_zephyr_report_passed(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
-):
+
+
+def test_zephyr_report_passed(pytester, config_tokens):
     """
     Check that zephyr correctly reports passed test case
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -29,12 +35,16 @@ def test_sth():
     assert result.ret == 0
 
 
-def test_zephyr_report_failed(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
-):
+def test_zephyr_report_failed(pytester, config_tokens):
     """
     Check that zephyr correctly reports failed test case
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -60,11 +70,18 @@ def test_sth():
 
 
 def test_zephyr_report_skipped(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
+    pytester,
+    config_tokens,
 ):
     """
     Check that zephyr correctly reports failed test case
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -94,12 +111,16 @@ def test_sth_else():
     assert result.ret == 0
 
 
-def test_zephyr_report_skipped_reason(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
-):
+def test_zephyr_report_skipped_reason(pytester, config_tokens):
     """
     Check that zephyr correctly reports skipped test case
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -125,12 +146,16 @@ def test_sth():
     assert result.ret == 0
 
 
-def test_zephyr_report_skipped_if(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
-):
+def test_zephyr_report_skipped_if(pytester, config_tokens):
     """
     Check that zephyr correctly reports skipped with a reason test case
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -156,12 +181,16 @@ def test_sth():
     assert result.ret == 0
 
 
-def test_zephyr_report_xfail(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
-):
+def test_zephyr_report_xfail(pytester, config_tokens):
     """
     Check that zephyr correctly reports xfailed test case
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -187,12 +216,16 @@ def test_sth():
     assert result.ret == 0
 
 
-def test_zephyr_report_xfail_if_reason(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
-):
+def test_zephyr_report_xfail_if_reason(pytester, config_tokens):
     """
     Check that zephyr correctly reports xfailed with a reason test case
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -218,12 +251,16 @@ def test_sth():
     assert result.ret == 0
 
 
-def test_zephyr_report_xpass(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
-):
+def test_zephyr_report_xpass(pytester, config_tokens):
     """
     Check that zephyr correctly reports xpassed test case
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -249,12 +286,16 @@ def test_sth():
     assert result.ret == 0
 
 
-def test_zephyr_report_xpass_if_reason(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
-):
+def test_zephyr_report_xpass_if_reason(pytester, config_tokens):
     """
     Check that zephyr correctly reports xpassed test case
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -280,12 +321,16 @@ def test_sth():
     assert result.ret == 0
 
 
-def test_zephyr_report_estimated_time(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
-):
+def test_zephyr_report_estimated_time(pytester, config_tokens):
     """
     Check that zephyr correctly reports estimated time for a test case
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -313,12 +358,16 @@ def test_sth():
     assert result.ret == 0
 
 
-def test_zephyr_report_custom_mapping(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
-):
+def test_zephyr_report_custom_mapping(pytester, config_tokens):
     """
     Check that zephyr correctly reports given the new mapping
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]

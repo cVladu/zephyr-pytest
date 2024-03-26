@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
+import warnings
 import os
 import pathlib
 import queue
 from typing import Any, List, Optional, Dict, Tuple
 from requests import HTTPError  # type: ignore[import]
+from packaging.version import Version
 
 import pytest
 from pytest import PytestConfigWarning
@@ -53,7 +55,7 @@ def _result_mapping(result: str) -> str:
 class ZephyrManager:
 
     @classmethod
-    def _load_config_params(cls, config: pytest.Config) -> Optional["ZephyrManager"]:
+    def _load_config_params(cls, config) -> Optional["ZephyrManager"]:
         kwargs = {}
         mandatory_params = [
             "zephyr_auth_token",
@@ -65,7 +67,7 @@ class ZephyrManager:
         mandatory_absent = []
         for param in mandatory_params:
             attr = param.replace("zephyr_", "")  # strip the zephyr_ prefix
-            if param in os.environ.keys():  # env var has priority
+            if param.upper() in os.environ.keys():  # env var has priority
                 value = os.environ[param]
             else:
                 value = config.getini(param)
@@ -115,7 +117,7 @@ class ZephyrManager:
         )
         self.testcases: List[ZephyrTestCase] = self._get_all_testscases()
         zephyr_folders = self.zephyr_instance.api.folders.get_folders()
-        folders_queue: queue.Queue[dict] = queue.Queue()
+        folders_queue: queue.Queue = queue.Queue()
         for folder in zephyr_folders:
             folders_queue.put(folder)
         self.root_folder = self._populate_root_folder(folders_queue)
@@ -248,7 +250,7 @@ class ZephyrManager:
             issue_links_to_remove = set(found_test_case.jira_issues) - set(
                 collected_test_case.jira_issues
             )
-            issues_to_create = set(collected_test_case.jira_issues) - set(
+            issue_links_to_create = set(collected_test_case.jira_issues) - set(
                 found_test_case.jira_issues
             )
             urls_links_to_remove = set(found_test_case.urls) - set(
@@ -265,7 +267,7 @@ class ZephyrManager:
             collected_test_case.key = response["key"]
             collected_test_case.id = response["id"]
             issue_links_to_remove = set()
-            issues_to_create = set(collected_test_case.jira_issues)
+            issue_links_to_create = set(collected_test_case.jira_issues)
             urls_links_to_remove = set()
             urls_links_to_create = set(collected_test_case.urls)
 
@@ -273,7 +275,7 @@ class ZephyrManager:
             self.zephyr_instance.api.links.delete_link(
                 collected_test_case.jira_issues_links[issue_id]
             )
-        for issue_id in issues_to_create:
+        for issue_id in issue_links_to_create:
             self.zephyr_instance.api.test_cases.create_issue_links(
                 collected_test_case.key, issue_id
             )
@@ -330,7 +332,7 @@ class ZephyrManager:
                 parent_folder = new_folder
         return parent_folder
 
-    def _populate_root_folder(self, zephyr_folders_queue: queue.Queue[dict]) -> Folder:
+    def _populate_root_folder(self, zephyr_folders_queue: queue.Queue) -> Folder:
         root_folder = Folder("root", None)
         while not zephyr_folders_queue.empty():
             folder_dict = zephyr_folders_queue.get()
@@ -350,13 +352,8 @@ class ZephyrManager:
                 root_folder.add_child(Folder(name, id))
         return root_folder
 
-    def pytest_collection(self, session: pytest.Session):
-        isinstance(session, pytest.Session)
-
-    def pytest_collection_modifyitems(
-        self, session: pytest.Session, config: pytest.Config, items: List[pytest.Item]
-    ):
-        isinstance(session, pytest.Session)
+    def pytest_collection_modifyitems(self, session, config, items: List):
+        warnings.warn("ENTERED")
         for item in items:
             zephyr_marker = item.get_closest_marker("zephyr_testcase")
             if zephyr_marker:
@@ -379,10 +376,16 @@ class ZephyrManager:
                     setattr(item, "zephyr_test_key", test_key)
         if config.option.zephyr_no_publish:
             return
-        testcycle_name: str = config.getini("zephyr_testcycle_name")
+        if "ZEPHYR_TESTCYCLE_NAME" in os.environ.keys():
+            testcycle_name = os.environ["ZEPHYR_TESTCYCLE_NAME"]
+        else:
+            testcycle_name = config.getini("zephyr_testcycle_name")
         if not testcycle_name:
             testcycle_name = "Pytest run"
-        testcycle_description = config.getini("zephyr_testcycle_description")
+        if "ZEPHYR_TESTCYCLE_DESCRIPTION" in os.environ.keys():
+            testcycle_description = os.environ["ZEPHYR_TESTCYCLE_DESCRIPTION"]
+        else:
+            testcycle_description = config.getini("zephyr_testcycle_description")
         self.executor_id = config.option.zephyr_owner_id or os.environ.get(
             "ZEPHYR_OWNER_ID"
         )
@@ -403,11 +406,17 @@ class ZephyrManager:
             )
 
     @pytest.hookimpl(tryfirst=True, hookwrapper=True)
-    def pytest_runtest_makereport(self, item: pytest.Item, call: pytest.CallInfo):
+    def pytest_runtest_makereport(self, item, call):
         # Works only for test cases that zephyr knows about
         outcome = yield
         if hasattr(item, "zephyr_test_key"):
-            test_report = pytest.TestReport.from_item_and_call(item, call)
+            # Workaround as TestReport is not exported in pytest version 6.2.x
+            if Version(pytest.__version__) <= Version("6.2.5"):
+                import _pytest
+
+                test_report = _pytest.reports.TestReport.from_item_and_call(item, call)
+            else:
+                test_report = pytest.TestReport.from_item_and_call(item, call)
             result: str = test_report.outcome
             rep = outcome.get_result()  # useful for xfail/xpass tests
             comment = test_report.longreprtext.replace("\n", "<br>")
@@ -432,7 +441,7 @@ class ZephyrManager:
                 )
 
 
-def pytest_configure(config: pytest.Config):
+def pytest_configure(config):
     if not config.option.zephyr:
         return
     zephyr_manager = ZephyrManager._load_config_params(config)
@@ -440,7 +449,7 @@ def pytest_configure(config: pytest.Config):
         config.pluginmanager.register(zephyr_manager)
 
 
-def pytest_addoption(parser: pytest.Parser):
+def pytest_addoption(parser):
     parser.addoption("--zephyr", action="store_true", help="Enable Zephyr integration")
     parser.addoption(
         "--zephyr-no-publish",
@@ -468,12 +477,12 @@ def pytest_addoption(parser: pytest.Parser):
     )
     parser.addini(
         "zephyr_jira_base_url",
-        help="[Required] JJira base url for Jira interaction",
+        help="[Required] Jira base url for Jira interaction",
         type="string",
     )
     parser.addini(
         "zephyr_jira_email",
-        help="[Required] JJira email for Jira interaction",
+        help="[Required] Jira email for Jira interaction",
         type="string",
     )
     parser.addini(
@@ -481,9 +490,7 @@ def pytest_addoption(parser: pytest.Parser):
         help="[Required] Jira auth token for Jira interaction",
         type="string",
     )
-    parser.addini(
-        "zephyr_testcycle_name", help="[Required] Zephyr test cycle name", type="string"
-    )
+    parser.addini("zephyr_testcycle_name", help="Zephyr test cycle name", type="string")
     parser.addini(
         "zephyr_testcycle_description",
         help="Zephyr test cycle description",

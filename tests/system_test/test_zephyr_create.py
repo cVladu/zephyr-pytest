@@ -3,12 +3,16 @@ import os
 import pytest
 
 
-def test_zephyr_making_folder_root(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
-):
+def test_zephyr_making_folder_root(pytester, config_tokens):
     """
     Check that the plugin can handle tests at the same level as the root folder
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -33,12 +37,16 @@ zephyr_strict = True
     assert result.ret == 0
 
 
-def test_zephyr_making_folder_root_with_testclass(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
-):
+def test_zephyr_making_folder_root_with_testclass(pytester, config_tokens):
     """
     Check that the plugin can handle tests at the same level as the root folder
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -68,11 +76,19 @@ zephyr_strict = True
 
 
 def test_zephyr_making_folders(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token, testdir
+    pytester,
+    config_tokens,
+    testdir,
 ):
     """
     Check that the plugin created the folders in Zephyr Scale
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -87,10 +103,13 @@ zephyr_strict = True
     testdir.mkdir("folder_0")
     testdir.mkdir("folder_0/subfolder_0")
     testdir.mkdir("folder_0/subfolder_1")
-    testdir.mkdir("folder_0/subfolder_1/subsubfolder_0")
+    testdir.mkdir("folder_0/subfolder_1/subsubfolder_0")  # noqa: E501
     testdir.mkdir("folder_1")
     testdir.mkdir("folder_1/subfolder_0")
-    with open(os.path.join(testdir.tmpdir, "folder_0/test_0.py"), "w") as f:
+    with open(
+        os.path.join(testdir.tmpdir, "folder_0/test_0.py"),
+        "w",
+    ) as f:
         f.write(
             """
 import pytest
@@ -103,7 +122,13 @@ def test_depth_2():
     assert True
                 """
         )
-    with open(os.path.join(testdir.tmpdir, "folder_0/subfolder_1/test_1.py"), "w") as f:
+    with open(
+        os.path.join(
+            testdir.tmpdir,
+            "folder_0/subfolder_1/test_1.py",  # noqa: E501
+        ),
+        "w",
+    ) as f:
         f.write(
             """
 import pytest
@@ -113,7 +138,13 @@ def test_depth_something():
     assert True
                 """
         )
-    with open(os.path.join(testdir.tmpdir, "folder_1/subfolder_0/test_2.py"), "w") as f:
+    with open(
+        os.path.join(
+            testdir.tmpdir,
+            "folder_1/subfolder_0/test_2.py",  # noqa: E501
+        ),
+        "w",
+    ) as f:
         f.write(
             """
 import pytest
@@ -128,11 +159,19 @@ def test_depth_something_else():
 
 
 def test_zephyr_making_folders_existing(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token, testdir
+    pytester,
+    config_tokens,
+    testdir,
 ):
     """
     Check that the plugin does not create the folders in Zephyr Scale if they already exist
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -146,7 +185,7 @@ zephyr_strict = True
     )
     testdir.mkdir("test_examples")
     testdir.mkdir("test_examples/test_a")
-    final_path = testdir.mkdir("test_examples/test_a/test_b")
+    final_path = testdir.mkdir("test_examples/test_a/test_b")  # noqa: E501
     with open(final_path.join("test_c.py"), "w") as f:
         f.write(
             """
@@ -164,11 +203,19 @@ def test_depth():
 
 
 def test_zephyr_making_folders_mix(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token, testdir
+    pytester,
+    config_tokens,
+    testdir,
 ):
     """
     Check that the plugin creates the folders in Zephyr Scale if they do not exist
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -182,7 +229,7 @@ zephyr_strict = True
     )
     testdir.mkdir("test_mix")
     testdir.mkdir("test_mix/test_a")
-    final_path = testdir.mkdir("test_mix/test_a/test_b")
+    final_path = testdir.mkdir("test_mix/test_a/test_b")  # noqa: E501
     with open(final_path.join("test_c.py"), "w") as f:
         f.write(
             """
@@ -194,7 +241,10 @@ def test_depth():
     assert result.ret == 0
 
     testdir.mkdir("test_mix/test_d")
-    with open(testdir.tmpdir.join("test_mix/test_a/test_something.py"), "w") as f:
+    with open(
+        testdir.tmpdir.join("test_mix/test_a/test_something.py"),  # noqa: E501
+        "w",
+    ) as f:
         f.write(
             """
 import pytest
@@ -204,7 +254,10 @@ def test_depth():
     assert True
     """
         )
-    with open(testdir.tmpdir.join("test_mix/test_a/test_something_else.py"), "w") as f:
+    with open(
+        testdir.tmpdir.join("test_mix/test_a/test_something_else.py"),  # noqa: E501
+        "w",
+    ) as f:
         f.write(
             """
 import pytest
@@ -214,7 +267,10 @@ def test_depth():
     assert True
     """
         )
-    with open(testdir.tmpdir.join("test_mix/test_d/test_d_something.py"), "w") as f:
+    with open(
+        testdir.tmpdir.join("test_mix/test_d/test_d_something.py"),  # noqa: E501
+        "w",
+    ) as f:
         f.write(
             """
 import pytest
@@ -230,11 +286,19 @@ def test_depth():
 
 
 def test_zephyr_creating_parametrized_test(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token, testdir
+    pytester,
+    config_tokens,
+    testdir,
 ):
     """
     Check that the plugin creates the test case in Zephyr Scale if it does not exist
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -247,7 +311,7 @@ zephyr_strict = True
                          """
     )
     testdir.mkdir("test_parametrized")
-    final_path = testdir.mkdir("test_parametrized/test_a")
+    final_path = testdir.mkdir("test_parametrized/test_a")  # noqa: E501
     with open(final_path.join("test_b.py"), "w") as f:
         f.write(
             """
@@ -263,16 +327,24 @@ import pytest
 def test_depth(input, expected):
     assert input + 1 == expected """
         )
-    result = pytester.runpytest("--zephyr", "--zephyr-no-publish", "test_parametrized")
+    result = pytester.runpytest(
+        "--zephyr",
+        "--zephyr-no-publish",
+        "test_parametrized",
+    )
     assert result.ret == 0
 
 
-def test_zephyr_creating_with_marker(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
-):
+def test_zephyr_creating_with_marker(pytester, config_tokens):
     """
     Check that the plugin correctly creates the test case in zephyr given the marker
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -296,32 +368,33 @@ def test_sth():
     assert result.ret == 0
 
 
+project_key = "FP"
+
+
 @pytest.mark.parametrize(
     "jira_issues",
     [
-        ["FP-12"],
-        ["FP-12", "FP-13"],
-        ["FP-12", "FP-13", "FP-14"],
+        [f"{project_key}-12"],
+        [f"{project_key}-12", f"{project_key}-13"],
+        [f"{project_key}-12", f"{project_key}-13", f"{project_key}-14"],
         ["12"],
         ["13", "14"],
         ["12", "13", "14"],
-        ["FP-12", "13", "14"],
-        ["12", "FP-13", "14"],
-        ["12", "13", "FP-14"],
+        [f"{project_key}-12", "13", "14"],
+        ["12", f"{project_key}-13", "14"],
+        ["12", "13", f"{project_key}-14"],
     ],
 )
-def test_zephyr_creating_with_jira_issues(
-    pytester,
-    project_key,
-    auth_token,
-    jira_base_url,
-    jira_email,
-    jira_token,
-    jira_issues,
-):
+def test_zephyr_creating_with_jira_issues(pytester, config_tokens, jira_issues):
     """
     Check that the plugin correctly links the issues to the created test case
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -347,13 +420,17 @@ def {test_name}():
     assert result.ret == 0
 
 
-def test_zephyr_creating_with_marker_extra_kwarg(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
-):
+def test_zephyr_creating_with_marker_extra_kwarg(pytester, config_tokens):
     """
     Check that the plugin correctly creates the test case in zephyr
     given the marker with extra kwarg
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -377,12 +454,16 @@ def test_sth():
     assert result.ret == 0
 
 
-def test_zephyr_creating_with_teststeps_docstring(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
-):
+def test_zephyr_creating_with_teststeps_docstring(pytester, config_tokens):
     """
     Check that the plugin correctly creates the test steps from __doc__
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -412,12 +493,16 @@ def test_sth():
     assert result.ret == 0
 
 
-def test_zephyr_creating_with_teststeps_list(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
-):
+def test_zephyr_creating_with_teststeps_list(pytester, config_tokens):
     """
     Check that the plugin correctly creates the test steps from list
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -447,12 +532,16 @@ def test_sth():
     assert result.ret == 0
 
 
-def test_zephyr_creating_test_cycle_default_name(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
-):
+def test_zephyr_creating_test_cycle_default_name(pytester, config_tokens):
     """
     Check that the plugin correctly creates the test cycle given no name
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -482,12 +571,16 @@ def test_sth():
     assert result.ret == 0
 
 
-def test_zephyr_creating_test_cycle_given_name(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
-):
+def test_zephyr_creating_test_cycle_given_name(pytester, config_tokens):
     """
     Check that the plugin correctly creates the test cycle given only name
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -518,12 +611,16 @@ def test_sth():
     assert result.ret == 0
 
 
-def test_zephyr_creating_test_cycle_given_description(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
-):
+def test_zephyr_creating_test_cycle_given_description(pytester, config_tokens):
     """
     Check that the plugin correctly creates the test cycle given only description
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -555,11 +652,18 @@ def test_sth():
 
 
 def test_zephyr_creating_test_cycle_given_name_and_description(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
+    pytester,
+    config_tokens,
 ):
     """
     Check that the plugin correctly creates the test cycle given name and description
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -591,12 +695,16 @@ def test_sth():
     assert result.ret == 0
 
 
-def test_zephyr_creating_test_cycle_link_to_test_plan(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
-):
+def test_zephyr_creating_test_cycle_link_to_test_plan(pytester, config_tokens):
     """
     Check that the plugin correctly creates the test cycle and links to test plan
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -608,7 +716,7 @@ zephyr_jira_token = {jira_token}
 zephyr_strict = True
 zephyr_testcycle_name = Test Cycle Linked To Test Plan
 zephyr_testcycle_description = Custom Description. Is this shown?
-zephyr_testplan_id = FP-P1
+zephyr_testplan_id = {project_key}-P1
 """
     )
     pytester.makepyfile(
@@ -630,11 +738,17 @@ def test_sth():
 
 
 def test_zephyr_creating_test_cycle_link_to_test_plan_without_project_key(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
+    pytester, config_tokens
 ):
     """
     Check that the plugin correctly creates the test cycle and links to test plan
     """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
@@ -667,10 +781,16 @@ def test_sth():
     assert result.ret == 0
 
 
-def test_zephyr_creasting_test_cycle_owner(
-    pytester, project_key, auth_token, jira_base_url, jira_email, jira_token
-):
-
+def test_zephyr_creating_test_cycle_owner(pytester, config_tokens):
+    """
+    Check that the plugin correctly creates the test cycle with the given owner
+    """
+    project_key = config_tokens["project_key"]
+    auth_token = config_tokens["auth_token"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_base_url = config_tokens["jira_base_url"]
+    jira_email = config_tokens["jira_email"]
+    jira_token = config_tokens["jira_token"]
     pytester.makeini(
         f"""
 [pytest]
